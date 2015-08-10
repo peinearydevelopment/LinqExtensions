@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryBuilder", "QueryBuilder\QueryBuilder.csproj", "{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{7EA2356F-8791-4140-8BA4-6430613C6904}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EA2356F-8791-4140-8BA4-6430613C6904}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EA2356F-8791-4140-8BA4-6430613C6904}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EA2356F-8791-4140-8BA4-6430613C6904}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EA2356F-8791-4140-8BA4-6430613C6904}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
