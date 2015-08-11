@@ -127,6 +127,7 @@ namespace UnitTests
 
 			var searchResults = _testClassEnumeration.Search(searchCriteria);
 			Assert.AreEqual(1, searchResults.Count());
+			Assert.AreEqual("AString", searchResults.First().TestString);
 		}
 
 		[TestMethod]
@@ -151,6 +152,7 @@ namespace UnitTests
 
 			var searchResults = _testClassEnumeration.Search(searchCriteria);
 			Assert.AreEqual(1, searchResults.Count());
+			Assert.AreEqual("CString", searchResults.First().TestString);
 		}
 
 		[TestMethod]
@@ -175,6 +177,7 @@ namespace UnitTests
 
 			var searchResults = _testClassEnumeration.Search(searchCriteria);
 			Assert.AreEqual(1, searchResults.Count());
+			Assert.AreEqual("DString", searchResults.First().TestString);
 		}
 
 		[TestMethod]
@@ -206,18 +209,5 @@ namespace UnitTests
 				Assert.AreEqual("StringSearchType with value 613 hasn't been implemented.", ex.Message);
 			}
 		}
-
-		//[TestMethod]
-		//public void TestMethod3()
-		//{
-		//	var searchCriteria = new TestClassSearchCriteria
-		//	{
-		//		//TestStringFilter = new StringSearchCriteria { SearchType = StringSearchType.StartsWith, Value = "A" },
-		//		TestDateTimeFilter = new DateTimeSearchCriteria { SearchType = DateTimeSearchType.Before, Value = DateTime.MaxValue }
-		//	};
-
-		//	var searchResults = TestClassEnumeration.Search(searchCriteria);
-		//	Assert.AreEqual(1, searchResults.Count());
-		//}
 	}
 }

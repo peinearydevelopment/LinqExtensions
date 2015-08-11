@@ -1,5 +1,7 @@
 ﻿namespace QueryBuilder
 {
+	// Currently all comparisons are done as case-sensitive comparisons. 
+	// TODO: add support for case-insensitive matches?
 	public enum StringSearchType
 	{
 		None = 0,

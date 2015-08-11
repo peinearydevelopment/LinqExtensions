@@ -1,5 +1,7 @@
 ﻿namespace QueryBuilder
 {
+	// Currently all comparisons are done without any DateTime manipulation. 
+	// TODO: add support for DateTimeKind matches?
 	public enum DateTimeSearchType
 	{
 		None = 0,

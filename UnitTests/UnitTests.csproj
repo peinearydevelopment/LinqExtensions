@@ -50,9 +50,10 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="DateTimeSearchCriteriaTests.cs" />
     <Compile Include="TestClass.cs" />
     <Compile Include="TestClassSearchCriteria.cs" />
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="StringSearchCriteriaTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
