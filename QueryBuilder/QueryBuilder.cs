@@ -63,7 +63,7 @@ namespace QueryBuilder
 						case StringSearchType.StartsWith:
 							return propertyValue.StartsWith(searchCriteria.Value);
 						case StringSearchType.EndsWith:
-							return propertyValue.Equals(searchCriteria.Value);
+							return propertyValue.EndsWith(searchCriteria.Value);
 						case StringSearchType.Contains:
 							return propertyValue.Contains(searchCriteria.Value);
 						case StringSearchType.None:
