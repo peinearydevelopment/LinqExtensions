@@ -206,7 +206,7 @@ namespace UnitTests
 			}
 			catch (ArgumentOutOfRangeException ex)
 			{
-				Assert.AreEqual("StringSearchType with value 613 hasn't been implemented.", ex.Message);
+				Assert.AreEqual("Specified argument was out of the range of valid values.\r\nParameter name: StringSearchType with value 613 hasn't been implemented.", ex.Message);
 			}
 		}
 	}
