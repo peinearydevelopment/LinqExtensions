@@ -3,9 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryBuilder", "QueryBuilder\QueryBuilder.csproj", "{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryBuilder.Contracts", "QueryBuilder.Contracts\QueryBuilder.Contracts.csproj", "{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{7EA2356F-8791-4140-8BA4-6430613C6904}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryBuilder.Linq.UnitTests", "QueryBuilder.Linq.UnitTests\QueryBuilder.Linq.UnitTests.csproj", "{7EA2356F-8791-4140-8BA4-6430613C6904}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryBuilder.Linq", "QueryBuilder.Linq\QueryBuilder.Linq.csproj", "{AA9E282D-5744-4020-BCF0-5E1A0718A7B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryBuilder.EntityFramework", "QueryBuilder.EntityFramework\QueryBuilder.EntityFramework.csproj", "{14139663-E2A6-4FCF-90E9-7C67B3DB5BE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryBuilder.EntityFramework.UnitTests", "QueryBuilder.EntityFramework.UnitTests\QueryBuilder.EntityFramework.UnitTests.csproj", "{A3590B8A-0F2C-46C1-81E4-9A26C8F5150D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +27,18 @@ Global
 		{7EA2356F-8791-4140-8BA4-6430613C6904}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EA2356F-8791-4140-8BA4-6430613C6904}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EA2356F-8791-4140-8BA4-6430613C6904}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA9E282D-5744-4020-BCF0-5E1A0718A7B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA9E282D-5744-4020-BCF0-5E1A0718A7B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA9E282D-5744-4020-BCF0-5E1A0718A7B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA9E282D-5744-4020-BCF0-5E1A0718A7B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14139663-E2A6-4FCF-90E9-7C67B3DB5BE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14139663-E2A6-4FCF-90E9-7C67B3DB5BE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14139663-E2A6-4FCF-90E9-7C67B3DB5BE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14139663-E2A6-4FCF-90E9-7C67B3DB5BE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3590B8A-0F2C-46C1-81E4-9A26C8F5150D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3590B8A-0F2C-46C1-81E4-9A26C8F5150D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3590B8A-0F2C-46C1-81E4-9A26C8F5150D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3590B8A-0F2C-46C1-81E4-9A26C8F5150D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
