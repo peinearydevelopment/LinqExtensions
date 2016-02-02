@@ -62,7 +62,7 @@
       <Project>{aa9e282d-5744-4020-bcf0-5e1a0718a7b4}</Project>
       <Name>QueryBuilder.Linq</Name>
     </ProjectReference>
-    <ProjectReference Include="..\QueryBuilder\QueryBuilder.Contracts.csproj">
+    <ProjectReference Include="..\QueryBuilder.Contracts\QueryBuilder.Contracts.csproj">
       <Project>{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}</Project>
       <Name>QueryBuilder.Contracts</Name>
     </ProjectReference>

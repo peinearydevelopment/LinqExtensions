@@ -2,7 +2,7 @@
 {
     using QueryBuilder.Contracts;
 
-    public class TestSearchCriteria : ObjectSearchCriteria<TestObject>
+    public class TestSearchCriteria : PagedSearchCriteria
     {
         public StringSearchCriteria TestStringProperty { get; set; }
         public IntegerSearchCriteria TestIntegerProperty { get; set; }

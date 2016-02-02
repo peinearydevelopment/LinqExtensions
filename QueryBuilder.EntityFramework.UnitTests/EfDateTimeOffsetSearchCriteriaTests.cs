@@ -2,9 +2,9 @@
 {
     using System.Linq;
     using System.Threading.Tasks;
-    using Framework.Searching.EntityFramework;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using QueryBuilder.Contracts;
+    using QueryBuilder.EntityFramework;
 
     [TestClass]
     public class EfDateTimeOffsetSearchCriteriaTests

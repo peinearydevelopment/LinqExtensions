@@ -2,7 +2,7 @@
 {
     using System;
 
-    public class DateTimeSearchCriteria : SearchCriteria<DateTime, DateTimeSearchType>
+    public class DateTimeSearchCriteria : SearchCriteriaBase<DateTime, DateTimeSearchType>
 	{
 	}
 }

@@ -1,6 +1,6 @@
 ﻿namespace QueryBuilder.Contracts
 {
-    public class IntegerSearchCriteria : PropertySearchCriteria<int, IntegerSearchType>
+    public class IntegerSearchCriteria : SearchCriteriaBase<int, IntegerSearchType>
     {
     }
 }

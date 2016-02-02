@@ -85,7 +85,7 @@
       <Project>{14139663-e2a6-4fcf-90e9-7c67b3db5be8}</Project>
       <Name>QueryBuilder.EntityFramework</Name>
     </ProjectReference>
-    <ProjectReference Include="..\QueryBuilder\QueryBuilder.Contracts.csproj">
+    <ProjectReference Include="..\QueryBuilder.Contracts\QueryBuilder.Contracts.csproj">
       <Project>{77cd7607-4e6b-4eb1-8def-aafcaff62767}</Project>
       <Name>QueryBuilder.Contracts</Name>
     </ProjectReference>

@@ -41,6 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BooleanSearchCriteria.cs" />
+    <Compile Include="BooleanSearchType.cs" />
     <Compile Include="DateTimeOffsetSearchCriteria.cs" />
     <Compile Include="DateTimeOffsetSearchType.cs" />
     <Compile Include="DateTimeSearchCriteria.cs" />
@@ -49,10 +51,11 @@
     <Compile Include="DecimalSearchType.cs" />
     <Compile Include="IntegerSearchCriteria.cs" />
     <Compile Include="IntegerSearchType.cs" />
-    <Compile Include="ObjectSearchCriteria.cs" />
+    <Compile Include="PagedSearchCriteria.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PropertySearchCriteria.cs" />
-    <Compile Include="SearchCriteria.cs" />
+    <Compile Include="SearchCriteriaBase.cs" />
+    <Compile Include="SearchResult.cs" />
+    <Compile Include="SortCriteriaBase.cs" />
     <Compile Include="SortType.cs" />
     <Compile Include="StringSearchCriteria.cs" />
     <Compile Include="StringSearchType.cs" />

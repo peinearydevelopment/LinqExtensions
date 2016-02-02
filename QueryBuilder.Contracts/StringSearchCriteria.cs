@@ -1,6 +1,6 @@
 ﻿namespace QueryBuilder.Contracts
 {
-	public class StringSearchCriteria : SearchCriteria<string, StringSearchType>
+	public class StringSearchCriteria : SearchCriteriaBase<string, StringSearchType>
 	{
 	}
 }

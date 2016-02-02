@@ -49,14 +49,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DynamicQuery.cs" />
     <Compile Include="EntityFrameworkExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SortCriteria.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\QueryBuilder\QueryBuilder.Contracts.csproj">
+    <ProjectReference Include="..\QueryBuilder.Contracts\QueryBuilder.Contracts.csproj">
       <Project>{77CD7607-4E6B-4EB1-8DEF-AAFCAFF62767}</Project>
       <Name>QueryBuilder.Contracts</Name>
     </ProjectReference>

@@ -2,9 +2,9 @@
 {
     using System.Linq;
     using System.Threading.Tasks;
-    using Framework.Searching.EntityFramework;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using QueryBuilder.Contracts;
+    using QueryBuilder.EntityFramework;
 
     [TestClass]
     public class EfDecimalSearchCriteriaTests
@@ -28,7 +28,7 @@
             using (var dbContext = new TestDbContext())
             {
                 var searchCriteria = new TestSearchCriteria();
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var results = await dbContext.TestObjects.Search(dbContext, searchCriteria).ToArrayAsync();
 
                 Assert.AreEqual(TestData.TestObjects.Length, results.Length);
             }

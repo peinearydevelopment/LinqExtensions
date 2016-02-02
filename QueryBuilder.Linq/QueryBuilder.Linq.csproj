@@ -44,7 +44,7 @@
     <Compile Include="LinqExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\QueryBuilder\QueryBuilder.Contracts.csproj">
+    <ProjectReference Include="..\QueryBuilder.Contracts\QueryBuilder.Contracts.csproj">
       <Project>{77cd7607-4e6b-4eb1-8def-aafcaff62767}</Project>
       <Name>QueryBuilder.Contracts</Name>
     </ProjectReference>

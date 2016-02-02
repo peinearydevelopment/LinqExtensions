@@ -1,6 +1,6 @@
 ﻿namespace QueryBuilder.Contracts
 {
-    public class DecimalSearchCriteria : PropertySearchCriteria<decimal, DecimalSearchType>
+    public class DecimalSearchCriteria : SearchCriteriaBase<decimal, DecimalSearchType>
     {
     }
 }

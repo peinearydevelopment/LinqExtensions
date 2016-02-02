@@ -2,7 +2,7 @@
 {
     using System;
 
-    public class DateTimeOffsetSearchCriteria : PropertySearchCriteria<DateTimeOffset, DateTimeOffsetSearchType>
+    public class DateTimeOffsetSearchCriteria : SearchCriteriaBase<DateTimeOffset, DateTimeOffsetSearchType>
     {
     }
 }

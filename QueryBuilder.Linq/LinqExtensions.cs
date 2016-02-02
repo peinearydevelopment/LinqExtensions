@@ -46,60 +46,60 @@
 			}
 		}
 
-		private static Func<TSearchable, bool> CreateStringSearchCriteria<TSearchable>(PropertyInfo propertyInfo, StringSearchCriteria searchCriteria)
+		private static Func<TSearchable, bool> CreateStringSearchCriteria<TSearchable>(PropertyInfo propertyInfo, StringSearchCriteria searchCriteriaBase)
 		{
 			return searchable =>
 			{
-				if (searchCriteria == null) return true;
+				if (searchCriteriaBase == null) return true;
 
 				if (propertyInfo.PropertyType != typeof(string)) throw new ArgumentException("Type of propertyInfo isn't a string.");
 
 				var propertyValue = (string)propertyInfo.GetValue(searchable);
-				switch (searchCriteria.SearchType)
+				switch (searchCriteriaBase.SearchType)
 				{
 						case StringSearchType.Equals:
-							return propertyValue.Equals(searchCriteria.Value);
+							return propertyValue.Equals(searchCriteriaBase.Value);
 						case StringSearchType.DoesNotEqual:
-							return !propertyValue.Equals(searchCriteria.Value);
+							return !propertyValue.Equals(searchCriteriaBase.Value);
 						case StringSearchType.StartsWith:
-							return propertyValue.StartsWith(searchCriteria.Value);
+							return propertyValue.StartsWith(searchCriteriaBase.Value);
 						case StringSearchType.EndsWith:
-							return propertyValue.EndsWith(searchCriteria.Value);
+							return propertyValue.EndsWith(searchCriteriaBase.Value);
 						case StringSearchType.Contains:
-							return propertyValue.Contains(searchCriteria.Value);
+							return propertyValue.Contains(searchCriteriaBase.Value);
 						case StringSearchType.None:
 							return true;
 						default:	
-							throw new ArgumentOutOfRangeException(string.Format("StringSearchType with value {0} hasn't been implemented.", searchCriteria.SearchType));
+							throw new ArgumentOutOfRangeException(string.Format("StringSearchType with value {0} hasn't been implemented.", searchCriteriaBase.SearchType));
 				}
 			};
 		}
 
-		private static Func<TSearchable, bool> CreateDateTimeSearchCriteria<TSearchable>(PropertyInfo propertyInfo, DateTimeSearchCriteria searchCriteria)
+		private static Func<TSearchable, bool> CreateDateTimeSearchCriteria<TSearchable>(PropertyInfo propertyInfo, DateTimeSearchCriteria searchCriteriaBase)
 		{
 			return searchable =>
 			{
-				if (searchCriteria == null) return true;
+				if (searchCriteriaBase == null) return true;
 
 				if (propertyInfo.PropertyType != typeof(DateTime)) throw new ArgumentException("Type of propertyInfo isn't a DateTime.");
 
 				var propertyValue = (DateTime)propertyInfo.GetValue(searchable);
-				switch (searchCriteria.SearchType)
+				switch (searchCriteriaBase.SearchType)
 				{
 					case DateTimeSearchType.Before:
-						return propertyValue < searchCriteria.Value;
+						return propertyValue < searchCriteriaBase.Value;
 					case DateTimeSearchType.BeforeOrEquals:
-						return propertyValue <= searchCriteria.Value;
+						return propertyValue <= searchCriteriaBase.Value;
 					case DateTimeSearchType.Equals:
-						return propertyValue == searchCriteria.Value;
+						return propertyValue == searchCriteriaBase.Value;
 					case DateTimeSearchType.AfterOrEquals:
-						return propertyValue >= searchCriteria.Value;
+						return propertyValue >= searchCriteriaBase.Value;
 					case DateTimeSearchType.After:
-						return propertyValue > searchCriteria.Value;
+						return propertyValue > searchCriteriaBase.Value;
 					case DateTimeSearchType.None:
 						return true;
 					default:
-						throw new ArgumentOutOfRangeException(string.Format("DateTimeSearchType with value {0} hasn't been implemented.", searchCriteria.SearchType));
+						throw new ArgumentOutOfRangeException(string.Format("DateTimeSearchType with value {0} hasn't been implemented.", searchCriteriaBase.SearchType));
 				}
 			};
 		}
@@ -126,19 +126,19 @@
 		//	foreach (var searchCriteriaProperty in searchCriteriaProperties)
 		//	{
 		//		var searchablePropertyInfo = typeOfSearchable.GetProperty(searchCriteriaProperty.Name.Replace("Filter", ""));
-		//		if (searchCriteriaProperty.PropertyType == typeof(StringSearchCriteria))
+		//		if (searchCriteriaProperty.PropertyType == typeof(StringSearchCriteriaBase))
 		//		{
-		//			yield return CreateStringSearchCriteria<TSearchable>(searchablePropertyInfo, (StringSearchCriteria)searchCriteriaProperty.GetValue(searchCriteria, null));
+		//			yield return CreateStringSearchCriteria<TSearchable>(searchablePropertyInfo, (StringSearchCriteriaBase)searchCriteriaProperty.GetValue(searchCriteria, null));
 		//		}
 
-		//		if (searchCriteriaProperty.PropertyType == typeof(DateTimeSearchCriteria))
+		//		if (searchCriteriaProperty.PropertyType == typeof(DateTimeSearchCriteriaBase))
 		//		{
-		//			yield return CreateDateTimeSearchCriteria<TSearchable>(searchablePropertyInfo, (DateTimeSearchCriteria) searchCriteriaProperty.GetValue(searchCriteria, null));
+		//			yield return CreateDateTimeSearchCriteria<TSearchable>(searchablePropertyInfo, (DateTimeSearchCriteriaBase) searchCriteriaProperty.GetValue(searchCriteria, null));
 		//		}
 		//	}
 		//}
 
-		//private static Expression<Func<TSearchable, bool>> CreateStringSearchCriteria<TSearchable>(PropertyInfo propertyInfo, StringSearchCriteria searchCriteria)
+		//private static Expression<Func<TSearchable, bool>> CreateStringSearchCriteria<TSearchable>(PropertyInfo propertyInfo, StringSearchCriteriaBase searchCriteria)
 		//{
 		//	if (searchCriteria == null) return searchable => true;
 
@@ -163,7 +163,7 @@
 		//	}
 		//}
 
-		//private static Expression<Func<TSearchable, bool>> CreateDateTimeSearchCriteria<TSearchable>(PropertyInfo propertyInfo, DateTimeSearchCriteria searchCriteria)
+		//private static Expression<Func<TSearchable, bool>> CreateDateTimeSearchCriteria<TSearchable>(PropertyInfo propertyInfo, DateTimeSearchCriteriaBase searchCriteria)
 		//{
 		//	if (searchCriteria == null) return searchable => true;
 

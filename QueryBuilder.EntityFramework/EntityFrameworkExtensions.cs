@@ -1,215 +1,355 @@
-﻿using System;
-using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-
-namespace Framework.Searching.EntityFramework
+﻿namespace QueryBuilder.EntityFramework
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Data.Entity;
+    using System.Data.Entity.Infrastructure;
+    using System.Data.SqlClient;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
     using QueryBuilder.Contracts;
 
+    //TODO: update search to mimic searchasync
+    //TODO: update all paths to honor searchcriteria
     public static class EntityFrameworkExtensions
     {
-        public static DbSqlQuery<TSearchable> Search<TSearchable, TEntitySearchCriteria>(this DbSet<TSearchable> dbSet, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
-                                                                                                                                                 where TEntitySearchCriteria : ObjectSearchCriteria<TSearchable>
-        {
-            var stringBuilder = new StringBuilder()
-                                    .CreateSelect<TSearchable>()
-                                    .CreateFrom<TSearchable>()
-                                    .CreateWhere<TSearchable, TEntitySearchCriteria>(entitySearchCriteria);
+        private static IDictionary<string, string> _objectPropertyToColumnNameMapper = new Dictionary<string, string>();
+        private static string _objectsTableName;
+        private static string _objectPrimaryKeyName;
 
-            var a = stringBuilder.Item1.ToString();
-            return dbSet.SqlQuery(stringBuilder.Item1.ToString(), stringBuilder.Item2);
+        public static IEnumerable<TSearchable> Search<TSearchable, TEntitySearchCriteria>(this DbSet<TSearchable> dbSet, DbContext dbContext, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
+                                                                                                                                                                                          where TEntitySearchCriteria : PagedSearchCriteria
+        {
+            dbContext.MapDbProperties<TSearchable>();
+
+            var dynamicQuery = new StringBuilder().CreateSelect()
+                                                  .CreateFrom()
+                                                  .CreateWhere(entitySearchCriteria);
+
+            return dbSet.SqlQuery(dynamicQuery.ParameterizedQuery.ToString(), dynamicQuery.Parameters)
+                        .Skip(entitySearchCriteria.PageIndex * entitySearchCriteria.PageSize)
+                        .Take(entitySearchCriteria.PageSize);
         }
-
-        public static StringBuilder CreateSelect<TSearchable>(this StringBuilder stringBuilder) where TSearchable : class
+        public static async Task<SearchResult<TSearchable>> SearchAsync<TSearchable, TEntitySearchCriteria>(this DbSet<TSearchable> dbSet, DbContext dbContext, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
+                                                                                                                                                                                                            where TEntitySearchCriteria : PagedSearchCriteria
         {
-            var tSearchable = typeof (TSearchable);
-            var tSearchableProperties = tSearchable.GetProperties();
-            var sqlProperties = string.Join(", ", tSearchableProperties.Select(property => property.Name));
-            stringBuilder.Append($"SELECT {sqlProperties} ");
-            return stringBuilder;
-        }
+            dbContext.MapDbProperties<TSearchable>();
 
-        public static StringBuilder CreateFrom<TSearchable>(this StringBuilder stringBuilder) where TSearchable : class
-        {
-            var tSearchable = typeof(TSearchable);
-            stringBuilder.Append($"FROM {tSearchable.Name}s ");
-            return stringBuilder;
-        }
+            var dynamicQuery = new StringBuilder().CreateSelect()
+                                                  .CreateFrom()
+                                                  .CreateWhere(entitySearchCriteria);
 
-        public static Tuple<StringBuilder, object[]> CreateWhere<TSearchable, TEntitySearchCriteria>(this StringBuilder stringBuilder, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
-                                                                                                                                                                                   where TEntitySearchCriteria : ObjectSearchCriteria<TSearchable>
-        {
-            var tEntitySearchCriteria = typeof(TEntitySearchCriteria);
-            var tEntitySearchCriteriaProperties = tEntitySearchCriteria.GetProperties().Where(prop => prop.GetValue(entitySearchCriteria) != null);
+            dynamicQuery.ParameterizedQuery = CreateOffset(dynamicQuery.ParameterizedQuery, entitySearchCriteria);
 
-            object[] parameters = new object[0];
-            if (tEntitySearchCriteriaProperties.Any())
+            var totalNumberOfResults = -1;
+            if (entitySearchCriteria.PageIndex == 0)
             {
-                var tmpStringBuilder = new StringBuilder();
-                parameters = new object[tEntitySearchCriteriaProperties.Count()];
-                var parameterIndex = 0;
-                foreach (var tEntitySearchCriteriaProperty in tEntitySearchCriteriaProperties)
+                var dynamicQuery2 = new StringBuilder().SafeSqlAppend("SELECT COUNT(1) ")
+                                                       .CreateFrom()
+                                                       .CreateWhere(entitySearchCriteria);
+                var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
+                totalNumberOfResults = (await objectContext.ExecuteStoreQueryAsync<int>(dynamicQuery2.ParameterizedQuery.ToString(), dynamicQuery2.Parameters)).First();
+            }
+
+            return new SearchResult<TSearchable>
+            {
+                TotalNumberOfResults = totalNumberOfResults,
+                Results = dbSet.SqlQuery(dynamicQuery.ParameterizedQuery.ToString(), dynamicQuery.Parameters).ToList()
+            };
+        }
+
+        private static StringBuilder CreateOffset<TEntitySearchCriteria>(StringBuilder stringBuilder, TEntitySearchCriteria entitySearchCriteria) where TEntitySearchCriteria : PagedSearchCriteria
+        {
+            return stringBuilder.SafeSqlAppend($"ORDER BY {_objectPrimaryKeyName} OFFSET {entitySearchCriteria.PageIndex * entitySearchCriteria.PageSize} ROWS FETCH NEXT {entitySearchCriteria.PageSize} ROWS ONLY");
+        }
+
+        private static StringBuilder CreateSelect(this StringBuilder stringBuilder)
+        {
+            var sqlProperties = string.Join(", ", _objectPropertyToColumnNameMapper.Select(propertyToColumnNameMap => $"[{propertyToColumnNameMap.Value}] AS [{propertyToColumnNameMap.Key}]"));
+            return stringBuilder.SafeSqlAppend($"SELECT {sqlProperties} ");
+        }
+
+        private static StringBuilder CreateFrom(this StringBuilder stringBuilder)
+        {
+            return stringBuilder.SafeSqlAppend($"FROM {_objectsTableName}");
+        }
+
+        private static StringBuilder SafeSqlAppend(this StringBuilder stringBuilder, string stringToAppend)
+        {
+            return stringBuilder.Append(stringBuilder.Length > 0 ? $" {stringToAppend}" : stringToAppend);
+        }
+
+        private static DynamicQuery CreateWhere<TEntitySearchCriteria>(this StringBuilder stringBuilder, TEntitySearchCriteria entitySearchCriteria) where TEntitySearchCriteria : PagedSearchCriteria
+        {
+            var tEntitySearchCriteriaProperties = typeof(TEntitySearchCriteria).GetProperties();
+
+            var parameters = new List<object>();
+            var parameterIndex = -1;
+            var tmpStringBuilder = new StringBuilder();
+            var sortCriteria = new List<SortCriteria>();
+
+            foreach (var propertyToColumnNameMap in _objectPropertyToColumnNameMapper)
+            {
+                var prop = tEntitySearchCriteriaProperties.FirstOrDefault(p => p.Name.Equals(propertyToColumnNameMap.Key, StringComparison.OrdinalIgnoreCase));
+
+                var propertySearchCriteria = prop?.GetValue(entitySearchCriteria);
+
+                if (propertySearchCriteria is SortCriteriaBase)
                 {
-                    if (tEntitySearchCriteriaProperty.PropertyType == typeof (StringSearchCriteria))
+                    string whereClause = null;
+                    object value = null;
+
+                    if (propertySearchCriteria is StringSearchCriteria)
                     {
-                        var stringPropertySearchCriteria = tEntitySearchCriteriaProperty.GetValue(entitySearchCriteria) as StringSearchCriteria;
-                        tmpStringBuilder.Append(CreateWhereClause(tEntitySearchCriteriaProperty.Name, parameterIndex, stringPropertySearchCriteria.SearchType));
-                        parameters[parameterIndex] = new SqlParameter($"p{parameterIndex}", stringPropertySearchCriteria.Value);
-                        parameterIndex++;
+                        var stringSearchCriteria = propertySearchCriteria as StringSearchCriteria;
+                        whereClause = CreateWhereClause(propertyToColumnNameMap.Value, parameterIndex, stringSearchCriteria.SearchType);
+                        value = stringSearchCriteria.Value;
                     }
 
-                    if (tEntitySearchCriteriaProperty.PropertyType == typeof(IntegerSearchCriteria))
+                    if (propertySearchCriteria is IntegerSearchCriteria)
                     {
-                        var integerPropertySearchCriteria = tEntitySearchCriteriaProperty.GetValue(entitySearchCriteria) as IntegerSearchCriteria;
-                        tmpStringBuilder.Append(CreateWhereClause(tEntitySearchCriteriaProperty.Name, parameterIndex, integerPropertySearchCriteria.SearchType));
-                        parameters[parameterIndex] = new SqlParameter($"p{parameterIndex}", integerPropertySearchCriteria.Value);
-                        parameterIndex++;
+                        var integerSearchCriteria = propertySearchCriteria as IntegerSearchCriteria;
+                        whereClause = CreateWhereClause(propertyToColumnNameMap.Value, parameterIndex, integerSearchCriteria.SearchType);
+                        value = integerSearchCriteria.Value;
                     }
 
-                    if (tEntitySearchCriteriaProperty.PropertyType == typeof(DecimalSearchCriteria))
+                    if (propertySearchCriteria is DecimalSearchCriteria)
                     {
-                        var decimalPropertySearchCriteria = tEntitySearchCriteriaProperty.GetValue(entitySearchCriteria) as DecimalSearchCriteria;
-                        tmpStringBuilder.Append(CreateWhereClause(tEntitySearchCriteriaProperty.Name, parameterIndex, decimalPropertySearchCriteria.SearchType));
-                        parameters[parameterIndex] = new SqlParameter($"p{parameterIndex}", decimalPropertySearchCriteria.Value);
-                        parameterIndex++;
+                        var decimalSearchCriteria = propertySearchCriteria as DecimalSearchCriteria;
+                        whereClause = CreateWhereClause(propertyToColumnNameMap.Value, parameterIndex, decimalSearchCriteria.SearchType);
+                        value = decimalSearchCriteria.Value;
                     }
 
-                    if (tEntitySearchCriteriaProperty.PropertyType == typeof(DateTimeSearchCriteria))
+                    if (propertySearchCriteria is DateTimeSearchCriteria)
                     {
-                        var dateTimePropertySearchCriteria = tEntitySearchCriteriaProperty.GetValue(entitySearchCriteria) as DateTimeSearchCriteria;
-                        tmpStringBuilder.Append(CreateWhereClause(tEntitySearchCriteriaProperty.Name, parameterIndex, dateTimePropertySearchCriteria.SearchType));
-                        parameters[parameterIndex] = new SqlParameter($"p{parameterIndex}", dateTimePropertySearchCriteria.Value);
-                        parameterIndex++;
+                        var dateTimeSearchCriteria = propertySearchCriteria as DateTimeSearchCriteria;
+                        whereClause = CreateWhereClause(propertyToColumnNameMap.Value, parameterIndex, dateTimeSearchCriteria.SearchType);
+                        value = dateTimeSearchCriteria.Value;
                     }
 
-                    if (tEntitySearchCriteriaProperty.PropertyType == typeof(DateTimeOffsetSearchCriteria))
+                    if (propertySearchCriteria is DateTimeOffsetSearchCriteria)
                     {
-                        var dateTimeOffsetPropertySearchCriteria = tEntitySearchCriteriaProperty.GetValue(entitySearchCriteria) as DateTimeOffsetSearchCriteria;
-                        tmpStringBuilder.Append(CreateWhereClause(tEntitySearchCriteriaProperty.Name, parameterIndex, dateTimeOffsetPropertySearchCriteria.SearchType));
-                        parameters[parameterIndex] = new SqlParameter($"p{parameterIndex}", dateTimeOffsetPropertySearchCriteria.Value);
-                        parameterIndex++;
+                        var dateTimeOffsetSearchCriteria = propertySearchCriteria as DateTimeOffsetSearchCriteria;
+                        whereClause = CreateWhereClause(propertyToColumnNameMap.Value, parameterIndex, dateTimeOffsetSearchCriteria.SearchType);
+                        value = dateTimeOffsetSearchCriteria.Value;
                     }
-                }
 
-                if (tmpStringBuilder.Length > 0)
-                {
-                    stringBuilder.Append("WHERE ").Append(tmpStringBuilder);
+                    if (propertySearchCriteria is BooleanSearchCriteria)
+                    {
+                        var booleanSearchCriteria = propertySearchCriteria as BooleanSearchCriteria;
+                        whereClause = CreateWhereClause(propertyToColumnNameMap.Value, parameterIndex, booleanSearchCriteria.SearchType);
+                        value = booleanSearchCriteria.Value;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(whereClause))
+                    {
+                        if (tmpStringBuilder.Length > 0)
+                        {
+                            tmpStringBuilder.SafeSqlAppend("AND");
+                        }
+
+                        tmpStringBuilder.SafeSqlAppend(whereClause);
+
+                        parameters.Add(new SqlParameter($"p{parameterIndex}", value));
+                    }
+
+                    sortCriteria.Add(new SortCriteria { SortColumnName = propertyToColumnNameMap.Value, SortCriteriaBase = propertySearchCriteria as SortCriteriaBase });
+                    parameterIndex++;
                 }
             }
 
-            return new Tuple<StringBuilder, object[]>(stringBuilder, parameters);
+            if (tmpStringBuilder.Length > 0)
+            {
+                stringBuilder.SafeSqlAppend("WHERE").Append(tmpStringBuilder);
+            }
+
+            var filteredSortCriteria = sortCriteria.Where(criteria => criteria.SortCriteriaBase.SortType != SortType.None);
+            if (filteredSortCriteria.Any())
+            {
+                var orderedSortCriteria = filteredSortCriteria.OrderBy(criteria => criteria.SortCriteriaBase.SortOrder);
+                stringBuilder.SafeSqlAppend("ORDER BY");
+                foreach (var sortCriterium in orderedSortCriteria)
+                {
+                    var sortDirectionString = sortCriterium.SortCriteriaBase.SortType == SortType.Ascending ? "ASC" : "DESC";
+
+                    stringBuilder.SafeSqlAppend($"{sortCriterium.SortColumnName} {sortDirectionString}");
+
+                    if (orderedSortCriteria.Count() > 1 && orderedSortCriteria.Last() != sortCriterium)
+                    {
+                        stringBuilder.Append(",");
+                    }
+                }
+            }
+
+            return new DynamicQuery
+            {
+                ParameterizedQuery = stringBuilder,
+                Parameters = parameters.ToArray()
+            };
         }
 
-        public static string CreateWhereClause(string propertyName, int propertyIndex, StringSearchType searchType)
+        private static string CreateWhereClause(string propertyName, int propertyIndex, StringSearchType searchType)
         {
             switch (searchType)
             {
                 case StringSearchType.None:
                     return string.Empty;
                 case StringSearchType.Equals:
-                    return $"{propertyName} = @p{propertyIndex}";
+                    return $"[{propertyName}] = @p{propertyIndex}";
                 case StringSearchType.DoesNotEqual:
-                    return $"{propertyName} != @p{propertyIndex}";
+                    return $"[{propertyName}] != @p{propertyIndex}";
                 case StringSearchType.StartsWith:
-                    return $"{propertyName} LIKE @p{propertyIndex} + '%'";
+                    return $"[{propertyName}] LIKE @p{propertyIndex} + '%'";
                 case StringSearchType.EndsWith:
-                    return $"{propertyName} LIKE '%' + @p{propertyIndex}";
+                    return $"[{propertyName}] LIKE '%' + @p{propertyIndex}";
                 case StringSearchType.Contains:
-                    return $"{propertyName} LIKE '%' + @p{propertyIndex} + '%'";
+                    return $"[{propertyName}] LIKE '%' + @p{propertyIndex} + '%'";
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        public static string CreateWhereClause(string propertyName, int propertyIndex, IntegerSearchType searchType)
+        private static string CreateWhereClause(string propertyName, int propertyIndex, IntegerSearchType searchType)
         {
             switch (searchType)
             {
                 case IntegerSearchType.None:
                     return string.Empty;
                 case IntegerSearchType.LessThan:
-                    return $"{propertyName} < @p{propertyIndex}";
+                    return $"[{propertyName}] < @p{propertyIndex}";
                 case IntegerSearchType.LessThanOrEquals:
-                    return $"{propertyName} <= @p{propertyIndex}";
+                    return $"[{propertyName}] <= @p{propertyIndex}";
                 case IntegerSearchType.Equals:
-                    return $"{propertyName} = @p{propertyIndex}";
+                    return $"[{propertyName}] = @p{propertyIndex}";
                 case IntegerSearchType.GreaterThanOrEquals:
-                    return $"{propertyName} >= @p{propertyIndex}";
+                    return $"[{propertyName}] >= @p{propertyIndex}";
                 case IntegerSearchType.GreaterThan:
-                    return $"{propertyName} > @p{propertyIndex}";
+                    return $"[{propertyName}] > @p{propertyIndex}";
                 case IntegerSearchType.DoesNotEqual:
-                    return $"{propertyName} <> @p{propertyIndex}";
+                    return $"[{propertyName}] <> @p{propertyIndex}";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(searchType), searchType, null);
             }
         }
 
-        public static string CreateWhereClause(string propertyName, int propertyIndex, DecimalSearchType searchType)
+        private static string CreateWhereClause(string propertyName, int propertyIndex, DecimalSearchType searchType)
         {
             switch (searchType)
             {
                 case DecimalSearchType.None:
                     return string.Empty;
                 case DecimalSearchType.LessThan:
-                    return $"{propertyName} < @p{propertyIndex}";
+                    return $"[{propertyName}] < @p{propertyIndex}";
                 case DecimalSearchType.LessThanOrEquals:
-                    return $"{propertyName} <= @p{propertyIndex}";
+                    return $"[{propertyName}] <= @p{propertyIndex}";
                 case DecimalSearchType.Equals:
-                    return $"{propertyName} = @p{propertyIndex}";
+                    return $"[{propertyName}] = @p{propertyIndex}";
                 case DecimalSearchType.GreaterThanOrEquals:
-                    return $"{propertyName} >= @p{propertyIndex}";
+                    return $"[{propertyName}] >= @p{propertyIndex}";
                 case DecimalSearchType.GreaterThan:
-                    return $"{propertyName} > @p{propertyIndex}";
+                    return $"[{propertyName}] > @p{propertyIndex}";
                 case DecimalSearchType.DoesNotEqual:
-                    return $"{propertyName} <> @p{propertyIndex}";
+                    return $"[{propertyName}] <> @p{propertyIndex}";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(searchType), searchType, null);
             }
         }
 
-        public static string CreateWhereClause(string propertyName, int propertyIndex, DateTimeSearchType searchType)
+        private static string CreateWhereClause(string propertyName, int propertyIndex, DateTimeSearchType searchType)
         {
             switch (searchType)
             {
                 case DateTimeSearchType.None:
                     return string.Empty;
                 case DateTimeSearchType.Before:
-                    return $"{propertyName} < @p{propertyIndex}";
+                    return $"[{propertyName}] < @p{propertyIndex}";
                 case DateTimeSearchType.BeforeOrEquals:
-                    return $"{propertyName} <= @p{propertyIndex}";
+                    return $"[{propertyName}] <= @p{propertyIndex}";
                 case DateTimeSearchType.Equals:
-                    return $"{propertyName} = @p{propertyIndex}";
+                    return $"[{propertyName}] = @p{propertyIndex}";
                 case DateTimeSearchType.AfterOrEquals:
-                    return $"{propertyName} >= @p{propertyIndex}";
+                    return $"[{propertyName}] >= @p{propertyIndex}";
                 case DateTimeSearchType.After:
-                    return $"{propertyName} > @p{propertyIndex}";
+                    return $"[{propertyName}] > @p{propertyIndex}";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(searchType), searchType, null);
             }
         }
 
-        public static string CreateWhereClause(string propertyName, int propertyIndex, DateTimeOffsetSearchType searchType)
+        private static string CreateWhereClause(string propertyName, int propertyIndex, DateTimeOffsetSearchType searchType)
         {
             switch (searchType)
             {
                 case DateTimeOffsetSearchType.None:
                     return string.Empty;
                 case DateTimeOffsetSearchType.Before:
-                    return $"{propertyName} < @p{propertyIndex}";
+                    return $"[{propertyName}] < @p{propertyIndex}";
                 case DateTimeOffsetSearchType.BeforeOrEquals:
-                    return $"{propertyName} <= @p{propertyIndex}";
+                    return $"[{propertyName}] <= @p{propertyIndex}";
                 case DateTimeOffsetSearchType.Equals:
-                    return $"{propertyName} = @p{propertyIndex}";
+                    return $"[{propertyName}] = @p{propertyIndex}";
                 case DateTimeOffsetSearchType.AfterOrEquals:
-                    return $"{propertyName} >= @p{propertyIndex}";
+                    return $"[{propertyName}] >= @p{propertyIndex}";
                 case DateTimeOffsetSearchType.After:
-                    return $"{propertyName} > @p{propertyIndex}";
+                    return $"[{propertyName}] > @p{propertyIndex}";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(searchType), searchType, null);
             }
+        }
+
+        private static string CreateWhereClause(string propertyName, int propertyIndex, BooleanSearchType searchType)
+        {
+            switch (searchType)
+            {
+                case BooleanSearchType.None:
+                    return string.Empty;
+                case BooleanSearchType.Equals:
+                    return $"[{propertyName}] = @p{propertyIndex}";
+                case BooleanSearchType.DoesNotEqual:
+                    return $"[{propertyName}] <> @p{propertyIndex}";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(searchType), searchType, null);
+            }
+        }
+
+        private static void MapDbProperties<TSearchable>(this IObjectContextAdapter dbContext) where TSearchable : class
+        {
+            var objectContext = dbContext.ObjectContext;
+            var objectSet = objectContext.CreateObjectSet<TSearchable>();
+            _objectPrimaryKeyName = objectSet.EntitySet.ElementType.KeyMembers.Select(k => k.Name).First();
+            var traceString = objectSet.ToTraceString();
+            traceString.MapObjectPropertiesToColumnNames();
+            traceString.MapObjectToTableName();
+        }
+
+        private static void MapObjectPropertiesToColumnNames(this string sqlClause)
+        {
+            var fromClauseStartIndex = sqlClause.IndexOf("FROM", StringComparison.OrdinalIgnoreCase);
+            var selectClause = sqlClause.Substring(0, fromClauseStartIndex).Trim();
+            var selectClauseSegments = selectClause.Split(',');
+            var tmpObjectPropertyToColumnNameMapper = new Dictionary<string, string>();
+            foreach (var selectClauseSegment in selectClauseSegments)
+            {
+                var columnNameStartIndex = selectClauseSegment.IndexOf(".[") + ".[".Length;
+                var columnNameEndIndex = selectClauseSegment.IndexOf(']', columnNameStartIndex);
+                var columnName = selectClauseSegment.Substring(columnNameStartIndex, columnNameEndIndex - columnNameStartIndex);
+                var objectProperyNameStartIndex = selectClauseSegment.IndexOf('[', columnNameEndIndex) + "[".Length;
+                var objectProperyNameEndIndex = selectClauseSegment.IndexOf(']', objectProperyNameStartIndex);
+                var objectPropertyName = selectClauseSegment.Substring(objectProperyNameStartIndex, objectProperyNameEndIndex - objectProperyNameStartIndex);
+                tmpObjectPropertyToColumnNameMapper.Add(objectPropertyName, columnName);
+            }
+
+            _objectPropertyToColumnNameMapper = tmpObjectPropertyToColumnNameMapper;
+        }
+
+        private static void MapObjectToTableName(this string sqlClause)
+        {
+            var fromClauseStartIndex = sqlClause.IndexOf("FROM", StringComparison.OrdinalIgnoreCase);
+            var fromClause = sqlClause.Substring(fromClauseStartIndex).Trim();
+            var tableNameStartIndex = fromClause.IndexOf(".[") + ".[".Length;
+            var tableNameEndIndex = fromClause.IndexOf(']', tableNameStartIndex);
+            _objectsTableName = fromClause.Substring(tableNameStartIndex, tableNameEndIndex - tableNameStartIndex);
         }
     }
 }
