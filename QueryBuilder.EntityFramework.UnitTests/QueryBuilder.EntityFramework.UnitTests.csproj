@@ -66,9 +66,9 @@
     <Compile Include="EfDecimalSearchCriteriaTests.cs" />
     <Compile Include="EfIntegerSearchCriteriaTests.cs" />
     <Compile Include="EfStringSearchCriteriaTests.cs" />
-    <Compile Include="Migrations\201601220401425_InitializeDatabase.cs" />
-    <Compile Include="Migrations\201601220401425_InitializeDatabase.Designer.cs">
-      <DependentUpon>201601220401425_InitializeDatabase.cs</DependentUpon>
+    <Compile Include="Migrations\201602032122145_Initialize.cs" />
+    <Compile Include="Migrations\201602032122145_Initialize.Designer.cs">
+      <DependentUpon>201602032122145_Initialize.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -92,8 +92,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201601220401425_InitializeDatabase.resx">
-      <DependentUpon>201601220401425_InitializeDatabase.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201602032122145_Initialize.resx">
+      <DependentUpon>201602032122145_Initialize.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Choose>

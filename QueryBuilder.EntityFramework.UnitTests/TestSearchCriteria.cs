@@ -1,6 +1,6 @@
 ﻿namespace QueryBuilder.EntityFramework.UnitTests
 {
-    using QueryBuilder.Contracts;
+    using Contracts;
 
     public class TestSearchCriteria : PagedSearchCriteria
     {

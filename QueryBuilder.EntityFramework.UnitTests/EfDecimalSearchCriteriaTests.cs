@@ -2,23 +2,12 @@
 {
     using System.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using QueryBuilder.Contracts;
+    using Contracts;
 
     [TestClass]
     public class EfDecimalSearchCriteriaTests
     {
         private const decimal TestValue = (decimal)2.5;
-
-        [ClassInitialize]
-        public static void Initialize(TestContext context)
-        {
-            using (var dbContext = new TestDbContext())
-            {
-                dbContext.TestObjects.RemoveRange(dbContext.TestObjects.ToArray());
-                TestData.TestObjects = dbContext.TestObjects.AddRange(TestData.TestObjects).ToArray();
-                dbContext.SaveChanges();
-            }
-        }
 
         [TestMethod]
         public void EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
@@ -169,16 +158,6 @@
                 var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
                 Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty != TestValue), result.Results.Count);
-            }
-        }
-
-        [ClassCleanup]
-        public static void Cleanup()
-        {
-            using (var dbContext = new TestDbContext())
-            {
-                dbContext.TestObjects.RemoveRange(dbContext.TestObjects.ToArray());
-                dbContext.SaveChanges();
             }
         }
     }

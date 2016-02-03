@@ -9,7 +9,7 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using QueryBuilder.Contracts;
+    using Contracts;
 
     public static class EntityFrameworkExtensions
     {
@@ -95,12 +95,18 @@
             return stringBuilder.Append(stringBuilder.Length > 0 ? $" {stringToAppend}" : stringToAppend);
         }
 
+        private static StringBuilder SafeSqlAppend(this StringBuilder stringBuilder, StringBuilder stringBuilderToAppend)
+        {
+            var stringToAppend = stringBuilderToAppend.ToString();
+            return stringBuilder.Append(stringBuilder.Length > 0 ? $" {stringToAppend}" : stringToAppend);
+        }
+
         private static DynamicQuery CreateWhere<TEntitySearchCriteria>(this StringBuilder stringBuilder, TEntitySearchCriteria entitySearchCriteria, IDictionary<string, string> objectPropertyToColumnNameMapper) where TEntitySearchCriteria : PagedSearchCriteria
         {
             var tEntitySearchCriteriaProperties = typeof(TEntitySearchCriteria).GetProperties();
 
             var parameters = new List<object>();
-            var parameterIndex = -1;
+            var parameterIndex = 0;
             var tmpStringBuilder = new StringBuilder();
             var sortCriteria = new List<SortCriteria>();
 
@@ -176,7 +182,7 @@
 
             if (tmpStringBuilder.Length > 0)
             {
-                stringBuilder.SafeSqlAppend("WHERE").Append(tmpStringBuilder);
+                stringBuilder.SafeSqlAppend("WHERE").SafeSqlAppend(tmpStringBuilder);
             }
 
             var filteredSortCriteria = sortCriteria.Where(criteria => criteria.SortCriteriaBase.SortType != SortType.None);
