@@ -60,6 +60,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="EfBooleanSearchCriteriaTests.cs" />
     <Compile Include="EfDateTimeOffsetSearchCriteriaTests.cs" />
     <Compile Include="EfDateTimeSearchCriteriaTests.cs" />
     <Compile Include="EfDecimalSearchCriteriaTests.cs" />

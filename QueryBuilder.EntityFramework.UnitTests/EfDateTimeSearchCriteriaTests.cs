@@ -1,10 +1,8 @@
 ﻿namespace QueryBuilder.EntityFramework.UnitTests
 {
     using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using QueryBuilder.Contracts;
-    using QueryBuilder.EntityFramework;
 
     [TestClass]
     public class EfDateTimeSearchCriteriaTests
@@ -21,19 +19,19 @@
         }
 
         [TestMethod]
-        public async Task EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
+        public void EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
                 var searchCriteria = new TestSearchCriteria();
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DateTimeSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
+        public void DateTimeSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -46,14 +44,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DateTimeSearchCriteriaBeforeShouldReturnObjectsInDatabaseThatAreBefore()
+        public void DateTimeSearchCriteriaBeforeShouldReturnObjectsInDatabaseThatAreBefore()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -66,14 +64,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty < TestData.DateTimeNow), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty < TestData.DateTimeNow), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DateTimeSearchCriteriaBeforeOrEqualsShouldReturnObjectsInDatabaseThatAreBeforeOrEquals()
+        public void DateTimeSearchCriteriaBeforeOrEqualsShouldReturnObjectsInDatabaseThatAreBeforeOrEquals()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -86,14 +84,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty <= TestData.DateTimeNow), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty <= TestData.DateTimeNow), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DateTimeSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatAreEqual()
+        public void DateTimeSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatAreEqual()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -106,14 +104,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty == TestData.DateTimeNow), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty == TestData.DateTimeNow), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DateTimeSearchCriteriaAfterShouldReturnObjectsInDatabaseThatAreAfter()
+        public void DateTimeSearchCriteriaAfterShouldReturnObjectsInDatabaseThatAreAfter()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -126,14 +124,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty > TestData.DateTimeNow), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty > TestData.DateTimeNow), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DateTimeSearchCriteriaAfterOrEqualsShouldReturnObjectsInDatabaseThatAreAfterOrEquals()
+        public void DateTimeSearchCriteriaAfterOrEqualsShouldReturnObjectsInDatabaseThatAreAfterOrEquals()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -146,9 +144,9 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty >= TestData.DateTimeNow), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDateTimeProperty != null && testobject.TestDateTimeProperty >= TestData.DateTimeNow), result.Results.Count);
             }
         }
 

@@ -2,17 +2,12 @@
 {
     using System;
     using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using QueryBuilder.Contracts;
-    using QueryBuilder.EntityFramework;
 
     [TestClass]
     public class EfStringSearchCriteriaTests
     {
-        //TODO: research below approach to get more information about the fluent interface
-        //ObjectContext objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
-        //var ba = objectContext.CreateObjectSet<TestObject>().ToTraceString();
         [ClassInitialize]
         public static void Initialize(TestContext context)
         {
@@ -25,19 +20,19 @@
         }
 
         [TestMethod]
-        public async Task EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
+        public void EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
                 var searchCriteria = new TestSearchCriteria();
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task StringSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
+        public void StringSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -50,14 +45,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task StringSearchCriteriaStartsWithShouldReturnObjectsInDatabaseThatStartWithA()
+        public void StringSearchCriteriaStartsWithShouldReturnObjectsInDatabaseThatStartWithA()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -70,14 +65,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.StartsWith("a", StringComparison.OrdinalIgnoreCase)), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.StartsWith("a", StringComparison.OrdinalIgnoreCase)), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task StringSearchCriteriaEndsWithShouldReturnObjectsInDatabaseThatEndWithA()
+        public void StringSearchCriteriaEndsWithShouldReturnObjectsInDatabaseThatEndWithA()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -90,14 +85,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.EndsWith("a", StringComparison.OrdinalIgnoreCase)), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.EndsWith("a", StringComparison.OrdinalIgnoreCase)), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task StringSearchCriteriaContainsShouldReturnObjectsInDatabaseThatContainA()
+        public void StringSearchCriteriaContainsShouldReturnObjectsInDatabaseThatContainA()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -110,14 +105,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.Contains("a")), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.Contains("a")), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task StringSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatEqualA()
+        public void StringSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatEqualA()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -130,14 +125,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.Equals("a", StringComparison.OrdinalIgnoreCase)), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && testobject.TestStringProperty.Equals("a", StringComparison.OrdinalIgnoreCase)), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task StringSearchCriteriaDoesNotEqualShouldReturnObjectsInDatabaseThatDoesNotEqualA()
+        public void StringSearchCriteriaDoesNotEqualShouldReturnObjectsInDatabaseThatDoesNotEqualA()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -150,9 +145,9 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && !testobject.TestStringProperty.Equals("a", StringComparison.OrdinalIgnoreCase)), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestStringProperty != null && !testobject.TestStringProperty.Equals("a", StringComparison.OrdinalIgnoreCase)), result.Results.Count);
             }
         }
 

@@ -1,6 +1,5 @@
 ﻿namespace QueryBuilder.Contracts
 {
-    //TODO: rename to SearchCriteriaBase
     public class PagedSearchCriteria
     {
         public PagedSearchCriteria()
@@ -29,7 +28,7 @@
         public bool ReturnAllResults { get; set; }
 
         /// <summary>
-        /// If set to true, the SearchResult set will include a count of all the records matching the search criteria in the data store.
+        /// If set to true AND PageIndex = 0, the SearchResult set will include a count of all the records matching the search criteria in the data store.
         /// </summary>
         public bool IncludeTotalCountWithResults { get; set; }
     }

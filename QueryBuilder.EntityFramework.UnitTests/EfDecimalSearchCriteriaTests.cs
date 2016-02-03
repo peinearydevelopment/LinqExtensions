@@ -1,10 +1,8 @@
 ﻿namespace QueryBuilder.EntityFramework.UnitTests
 {
     using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using QueryBuilder.Contracts;
-    using QueryBuilder.EntityFramework;
 
     [TestClass]
     public class EfDecimalSearchCriteriaTests
@@ -23,19 +21,19 @@
         }
 
         [TestMethod]
-        public async Task EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
+        public void EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
                 var searchCriteria = new TestSearchCriteria();
-                var results = await dbContext.TestObjects.Search(dbContext, searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DecimalSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
+        public void DecimalSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -48,14 +46,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DecimalSearchCriteriaLessThanShouldReturnObjectsInDatabaseThatAreLessThan()
+        public void DecimalSearchCriteriaLessThanShouldReturnObjectsInDatabaseThatAreLessThan()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -68,14 +66,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty < TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty < TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DecimalSearchCriteriaLessThanOrEqualsShouldReturnObjectsInDatabaseThatAreLessThanOrEquals()
+        public void DecimalSearchCriteriaLessThanOrEqualsShouldReturnObjectsInDatabaseThatAreLessThanOrEquals()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -88,14 +86,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty <= TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty <= TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DecimalSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatAreEqual()
+        public void DecimalSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatAreEqual()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -108,14 +106,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty == TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty == TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DecimalSearchCriteriaGreaterThanShouldReturnObjectsInDatabaseThatAreGreaterThan()
+        public void DecimalSearchCriteriaGreaterThanShouldReturnObjectsInDatabaseThatAreGreaterThan()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -128,14 +126,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty > TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty > TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DecimalSearchCriteriaGreaterThanOrEqualsShouldReturnObjectsInDatabaseThatAreGreaterThanOrEqual()
+        public void DecimalSearchCriteriaGreaterThanOrEqualsShouldReturnObjectsInDatabaseThatAreGreaterThanOrEqual()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -148,14 +146,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty >= TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty >= TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task DecimalSearchCriteriaDoesNotEqualShouldReturnObjectsInDatabaseThatDoNotEqual()
+        public void DecimalSearchCriteriaDoesNotEqualShouldReturnObjectsInDatabaseThatDoNotEqual()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -168,9 +166,9 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result =  dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty != TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestDecimalProperty != null && testobject.TestDecimalProperty != TestValue), result.Results.Count);
             }
         }
 

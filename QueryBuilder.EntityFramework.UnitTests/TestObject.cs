@@ -10,5 +10,6 @@
         public DateTime? TestDateTimeProperty { get; set; }
         public DateTimeOffset? TestDateTimeOffsetProperty { get; set; }
         public decimal? TestDecimalProperty { get; set; }
+        public bool? TestBooleanProperty { get; set; }
     }
 }

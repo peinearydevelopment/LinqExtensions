@@ -1,10 +1,8 @@
 ﻿namespace QueryBuilder.EntityFramework.UnitTests
 {
     using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using QueryBuilder.Contracts;
-    using QueryBuilder.EntityFramework;
 
     [TestClass]
     public class EfIntegerSearchCriteriaTests
@@ -23,19 +21,19 @@
         }
 
         [TestMethod]
-        public async Task EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
+        public void EmptySearchCriteriaObjectShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
                 var searchCriteria = new TestSearchCriteria();
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task IntegerSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
+        public void IntegerSearchCriteriaNoneShouldReturnAllObjectsInDatabase()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -48,14 +46,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Length, results.Length);
+                Assert.AreEqual(TestData.TestObjects.Length, result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task IntegerSearchCriteriaLessThanShouldReturnObjectsInDatabaseThatAreLessThan()
+        public void IntegerSearchCriteriaLessThanShouldReturnObjectsInDatabaseThatAreLessThan()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -68,14 +66,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty < TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty < TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task IntegerSearchCriteriaLessThanOrEqualsShouldReturnObjectsInDatabaseThatAreLessThanOrEquals()
+        public void IntegerSearchCriteriaLessThanOrEqualsShouldReturnObjectsInDatabaseThatAreLessThanOrEquals()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -88,14 +86,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty <= TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty <= TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task IntegerSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatAreEqual()
+        public void IntegerSearchCriteriaEqualsShouldReturnObjectsInDatabaseThatAreEqual()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -108,14 +106,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty == TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty == TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task IntegerSearchCriteriaGreaterThanShouldReturnObjectsInDatabaseThatAreGreaterThan()
+        public void IntegerSearchCriteriaGreaterThanShouldReturnObjectsInDatabaseThatAreGreaterThan()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -128,14 +126,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty > TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty > TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task IntegerSearchCriteriaGreaterThanOrEqualsShouldReturnObjectsInDatabaseThatAreGreaterThanOrEqual()
+        public void IntegerSearchCriteriaGreaterThanOrEqualsShouldReturnObjectsInDatabaseThatAreGreaterThanOrEqual()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -148,14 +146,14 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty >= TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty >= TestValue), result.Results.Count);
             }
         }
 
         [TestMethod]
-        public async Task IntegerSearchCriteriaDoesNotEqualShouldReturnObjectsInDatabaseThatDoNotEqual()
+        public void IntegerSearchCriteriaDoesNotEqualShouldReturnObjectsInDatabaseThatDoNotEqual()
         {
             using (var dbContext = new TestDbContext())
             {
@@ -168,9 +166,9 @@
                     }
                 };
 
-                var results = await dbContext.TestObjects.Search(searchCriteria).ToArrayAsync();
+                var result = dbContext.TestObjects.Search(dbContext, searchCriteria);
 
-                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty != TestValue), results.Length);
+                Assert.AreEqual(TestData.TestObjects.Count(testobject => testobject.TestIntegerProperty != null && testobject.TestIntegerProperty != TestValue), result.Results.Count);
             }
         }
 

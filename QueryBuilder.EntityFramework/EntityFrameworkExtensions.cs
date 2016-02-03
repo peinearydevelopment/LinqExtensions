@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data.Entity;
+    using System.Data.Entity.Core.Objects;
     using System.Data.Entity.Infrastructure;
     using System.Data.SqlClient;
     using System.Linq;
@@ -10,69 +11,83 @@
     using System.Threading.Tasks;
     using QueryBuilder.Contracts;
 
-    //TODO: update search to mimic searchasync
-    //TODO: update all paths to honor searchcriteria
     public static class EntityFrameworkExtensions
     {
-        private static IDictionary<string, string> _objectPropertyToColumnNameMapper = new Dictionary<string, string>();
-        private static string _objectsTableName;
-        private static string _objectPrimaryKeyName;
-
-        public static IEnumerable<TSearchable> Search<TSearchable, TEntitySearchCriteria>(this DbSet<TSearchable> dbSet, DbContext dbContext, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
-                                                                                                                                                                                          where TEntitySearchCriteria : PagedSearchCriteria
+        public static SearchResult<TSearchable> Search<TSearchable, TEntitySearchCriteria>(this DbSet<TSearchable> dbSet, DbContext dbContext, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
+                                                                                                                                                                                           where TEntitySearchCriteria : PagedSearchCriteria
         {
-            dbContext.MapDbProperties<TSearchable>();
-
-            var dynamicQuery = new StringBuilder().CreateSelect()
-                                                  .CreateFrom()
-                                                  .CreateWhere(entitySearchCriteria);
-
-            return dbSet.SqlQuery(dynamicQuery.ParameterizedQuery.ToString(), dynamicQuery.Parameters)
-                        .Skip(entitySearchCriteria.PageIndex * entitySearchCriteria.PageSize)
-                        .Take(entitySearchCriteria.PageSize);
-        }
-        public static async Task<SearchResult<TSearchable>> SearchAsync<TSearchable, TEntitySearchCriteria>(this DbSet<TSearchable> dbSet, DbContext dbContext, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
-                                                                                                                                                                                                            where TEntitySearchCriteria : PagedSearchCriteria
-        {
-            dbContext.MapDbProperties<TSearchable>();
-
-            var dynamicQuery = new StringBuilder().CreateSelect()
-                                                  .CreateFrom()
-                                                  .CreateWhere(entitySearchCriteria);
-
-            dynamicQuery.ParameterizedQuery = CreateOffset(dynamicQuery.ParameterizedQuery, entitySearchCriteria);
-
-            var totalNumberOfResults = -1;
-            if (entitySearchCriteria.PageIndex == 0)
-            {
-                var dynamicQuery2 = new StringBuilder().SafeSqlAppend("SELECT COUNT(1) ")
-                                                       .CreateFrom()
-                                                       .CreateWhere(entitySearchCriteria);
-                var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
-                totalNumberOfResults = (await objectContext.ExecuteStoreQueryAsync<int>(dynamicQuery2.ParameterizedQuery.ToString(), dynamicQuery2.Parameters)).First();
-            }
+            var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
+            var objectSqlMetadata = dbContext.MapDbProperties<TSearchable>();
+            var resultsDynamicQuery = GenerateResultsDynamicQuery(objectSqlMetadata, entitySearchCriteria);
+            var totalResultsCountDynamicQuery = GenerateTotalResultsCountDynamicQuery(objectSqlMetadata, entitySearchCriteria);
 
             return new SearchResult<TSearchable>
             {
-                TotalNumberOfResults = totalNumberOfResults,
-                Results = dbSet.SqlQuery(dynamicQuery.ParameterizedQuery.ToString(), dynamicQuery.Parameters).ToList()
+                TotalNumberOfResults = totalResultsCountDynamicQuery == null ? (int?)null : objectContext.ExecuteStoreQuery<int>(totalResultsCountDynamicQuery.ParameterizedQuery.ToString(), totalResultsCountDynamicQuery.Parameters).First(),
+                Results = dbSet.SqlQuery(resultsDynamicQuery.ParameterizedQuery.ToString(), resultsDynamicQuery.Parameters).ToList()
             };
         }
 
-        private static StringBuilder CreateOffset<TEntitySearchCriteria>(StringBuilder stringBuilder, TEntitySearchCriteria entitySearchCriteria) where TEntitySearchCriteria : PagedSearchCriteria
+        public static async Task<SearchResult<TSearchable>> SearchAsync<TSearchable, TEntitySearchCriteria>(this DbSet<TSearchable> dbSet, DbContext dbContext, TEntitySearchCriteria entitySearchCriteria) where TSearchable : class
+                                                                                                                                                                                                            where TEntitySearchCriteria : PagedSearchCriteria
         {
-            return stringBuilder.SafeSqlAppend($"ORDER BY {_objectPrimaryKeyName} OFFSET {entitySearchCriteria.PageIndex * entitySearchCriteria.PageSize} ROWS FETCH NEXT {entitySearchCriteria.PageSize} ROWS ONLY");
+            var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
+            var objectSqlMetadata = dbContext.MapDbProperties<TSearchable>();
+            var resultsDynamicQuery = GenerateResultsDynamicQuery(objectSqlMetadata, entitySearchCriteria);
+            var totalResultsCountDynamicQuery = GenerateTotalResultsCountDynamicQuery(objectSqlMetadata, entitySearchCriteria);
+
+            return new SearchResult<TSearchable>
+            {
+                TotalNumberOfResults = totalResultsCountDynamicQuery == null ? (int?)null : (await objectContext.ExecuteStoreQueryAsync<int>(totalResultsCountDynamicQuery.ParameterizedQuery.ToString(), totalResultsCountDynamicQuery.Parameters)).First(),
+                Results = await dbSet.SqlQuery(resultsDynamicQuery.ParameterizedQuery.ToString(), resultsDynamicQuery.Parameters).ToListAsync()
+            };
         }
 
-        private static StringBuilder CreateSelect(this StringBuilder stringBuilder)
+        private static DynamicQuery GenerateResultsDynamicQuery<TEntitySearchCriteria>(ObjectSqlMetadata objectSqlMetadata, TEntitySearchCriteria entitySearchCriteria) where TEntitySearchCriteria : PagedSearchCriteria
         {
-            var sqlProperties = string.Join(", ", _objectPropertyToColumnNameMapper.Select(propertyToColumnNameMap => $"[{propertyToColumnNameMap.Value}] AS [{propertyToColumnNameMap.Key}]"));
-            return stringBuilder.SafeSqlAppend($"SELECT {sqlProperties} ");
+            var dynamicQuery = new StringBuilder().CreateSelect(objectSqlMetadata.ObjectPropertyToColumnNameMapper)
+                                                  .CreateFrom(objectSqlMetadata.SchemaName, objectSqlMetadata.TableName)
+                                                  .CreateWhere(entitySearchCriteria, objectSqlMetadata.ObjectPropertyToColumnNameMapper);
+
+            if (!entitySearchCriteria.ReturnAllResults)
+            {
+                dynamicQuery = dynamicQuery.CreateOffset(entitySearchCriteria, objectSqlMetadata.PrimaryKeyName);
+            }
+
+            return dynamicQuery;
         }
 
-        private static StringBuilder CreateFrom(this StringBuilder stringBuilder)
+        private static DynamicQuery GenerateTotalResultsCountDynamicQuery<TEntitySearchCriteria>(ObjectSqlMetadata objectSqlMetadata, TEntitySearchCriteria entitySearchCriteria) where TEntitySearchCriteria : PagedSearchCriteria
         {
-            return stringBuilder.SafeSqlAppend($"FROM {_objectsTableName}");
+            if (entitySearchCriteria.ReturnAllResults || (entitySearchCriteria.IncludeTotalCountWithResults && entitySearchCriteria.PageIndex == 0))
+            {
+                return new StringBuilder().SafeSqlAppend("SELECT COUNT(1)")
+                                          .CreateFrom(objectSqlMetadata.SchemaName, objectSqlMetadata.TableName)
+                                          .CreateWhere(entitySearchCriteria, objectSqlMetadata.ObjectPropertyToColumnNameMapper);
+            }
+
+            return null;
+        }
+
+        private static DynamicQuery CreateOffset<TEntitySearchCriteria>(this DynamicQuery dynamicQuery, TEntitySearchCriteria entitySearchCriteria, string primaryKeyName) where TEntitySearchCriteria : PagedSearchCriteria
+        {
+            dynamicQuery.ParameterizedQuery
+                        .SafeSqlAppend($"ORDER BY {primaryKeyName}")
+                        .SafeSqlAppend($"OFFSET {entitySearchCriteria.PageIndex * entitySearchCriteria.PageSize} ROWS")
+                        .SafeSqlAppend($"FETCH NEXT {entitySearchCriteria.PageSize} ROWS ONLY");
+
+            return dynamicQuery;
+        }
+
+        private static StringBuilder CreateSelect(this StringBuilder stringBuilder, IDictionary<string, string> objectPropertyToColumnNameMapper)
+        {
+            var sqlProperties = string.Join(", ", objectPropertyToColumnNameMapper.Select(propertyToColumnNameMap => $"[{propertyToColumnNameMap.Value}] AS [{propertyToColumnNameMap.Key}]"));
+            return stringBuilder.SafeSqlAppend($"SELECT {sqlProperties}");
+        }
+
+        private static StringBuilder CreateFrom(this StringBuilder stringBuilder, string schema, string tableName)
+        {
+            return stringBuilder.SafeSqlAppend($"FROM [{schema}].[{tableName}]");
         }
 
         private static StringBuilder SafeSqlAppend(this StringBuilder stringBuilder, string stringToAppend)
@@ -80,7 +95,7 @@
             return stringBuilder.Append(stringBuilder.Length > 0 ? $" {stringToAppend}" : stringToAppend);
         }
 
-        private static DynamicQuery CreateWhere<TEntitySearchCriteria>(this StringBuilder stringBuilder, TEntitySearchCriteria entitySearchCriteria) where TEntitySearchCriteria : PagedSearchCriteria
+        private static DynamicQuery CreateWhere<TEntitySearchCriteria>(this StringBuilder stringBuilder, TEntitySearchCriteria entitySearchCriteria, IDictionary<string, string> objectPropertyToColumnNameMapper) where TEntitySearchCriteria : PagedSearchCriteria
         {
             var tEntitySearchCriteriaProperties = typeof(TEntitySearchCriteria).GetProperties();
 
@@ -89,7 +104,7 @@
             var tmpStringBuilder = new StringBuilder();
             var sortCriteria = new List<SortCriteria>();
 
-            foreach (var propertyToColumnNameMap in _objectPropertyToColumnNameMapper)
+            foreach (var propertyToColumnNameMap in objectPropertyToColumnNameMapper)
             {
                 var prop = tEntitySearchCriteriaProperties.FirstOrDefault(p => p.Name.Equals(propertyToColumnNameMap.Key, StringComparison.OrdinalIgnoreCase));
 
@@ -313,22 +328,30 @@
             }
         }
 
-        private static void MapDbProperties<TSearchable>(this IObjectContextAdapter dbContext) where TSearchable : class
+        //TODO: update to use regex
+        private static ObjectSqlMetadata MapDbProperties<TSearchable>(this IObjectContextAdapter dbContext) where TSearchable : class
         {
             var objectContext = dbContext.ObjectContext;
             var objectSet = objectContext.CreateObjectSet<TSearchable>();
-            _objectPrimaryKeyName = objectSet.EntitySet.ElementType.KeyMembers.Select(k => k.Name).First();
             var traceString = objectSet.ToTraceString();
-            traceString.MapObjectPropertiesToColumnNames();
-            traceString.MapObjectToTableName();
+
+            return new ObjectSqlMetadata().MapPrimaryKeyName(objectSet)
+                                          .MapObjectPropertiesToColumnNames(traceString)
+                                          .MapObjectToTableName(traceString)
+                                          .MapSchema(traceString);
         }
 
-        private static void MapObjectPropertiesToColumnNames(this string sqlClause)
+        private static ObjectSqlMetadata MapPrimaryKeyName<TSearchable>(this ObjectSqlMetadata objectSqlMetadata, ObjectSet<TSearchable> objectSet) where TSearchable : class
+        {
+            objectSqlMetadata.PrimaryKeyName = objectSet.EntitySet.ElementType.KeyMembers.Select(k => k.Name).First();
+            return objectSqlMetadata;
+        }
+
+        private static ObjectSqlMetadata MapObjectPropertiesToColumnNames(this ObjectSqlMetadata objectSqlMetadata, string sqlClause)
         {
             var fromClauseStartIndex = sqlClause.IndexOf("FROM", StringComparison.OrdinalIgnoreCase);
             var selectClause = sqlClause.Substring(0, fromClauseStartIndex).Trim();
             var selectClauseSegments = selectClause.Split(',');
-            var tmpObjectPropertyToColumnNameMapper = new Dictionary<string, string>();
             foreach (var selectClauseSegment in selectClauseSegments)
             {
                 var columnNameStartIndex = selectClauseSegment.IndexOf(".[") + ".[".Length;
@@ -337,19 +360,27 @@
                 var objectProperyNameStartIndex = selectClauseSegment.IndexOf('[', columnNameEndIndex) + "[".Length;
                 var objectProperyNameEndIndex = selectClauseSegment.IndexOf(']', objectProperyNameStartIndex);
                 var objectPropertyName = selectClauseSegment.Substring(objectProperyNameStartIndex, objectProperyNameEndIndex - objectProperyNameStartIndex);
-                tmpObjectPropertyToColumnNameMapper.Add(objectPropertyName, columnName);
+                objectSqlMetadata.ObjectPropertyToColumnNameMapper.Add(objectPropertyName, columnName);
             }
 
-            _objectPropertyToColumnNameMapper = tmpObjectPropertyToColumnNameMapper;
+            return objectSqlMetadata;
         }
 
-        private static void MapObjectToTableName(this string sqlClause)
+        private static ObjectSqlMetadata MapObjectToTableName(this ObjectSqlMetadata objectSqlMetadata, string sqlClause)
         {
             var fromClauseStartIndex = sqlClause.IndexOf("FROM", StringComparison.OrdinalIgnoreCase);
             var fromClause = sqlClause.Substring(fromClauseStartIndex).Trim();
             var tableNameStartIndex = fromClause.IndexOf(".[") + ".[".Length;
             var tableNameEndIndex = fromClause.IndexOf(']', tableNameStartIndex);
-            _objectsTableName = fromClause.Substring(tableNameStartIndex, tableNameEndIndex - tableNameStartIndex);
+            objectSqlMetadata.TableName = fromClause.Substring(tableNameStartIndex, tableNameEndIndex - tableNameStartIndex);
+            return objectSqlMetadata;
+        }
+
+        //TODO: parse schema also
+        private static ObjectSqlMetadata MapSchema(this ObjectSqlMetadata objectSqlMetadata, string sqlClause)
+        {
+            objectSqlMetadata.SchemaName = "dbo";
+            return objectSqlMetadata;
         }
     }
 }

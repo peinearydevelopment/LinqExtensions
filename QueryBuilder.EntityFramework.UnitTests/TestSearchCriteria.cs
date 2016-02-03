@@ -9,5 +9,6 @@
         public DateTimeSearchCriteria TestDateTimeProperty { get; set; }
         public DateTimeOffsetSearchCriteria TestDateTimeOffsetProperty { get; set; }
         public DecimalSearchCriteria TestDecimalProperty { get; set; }
+        public BooleanSearchCriteria TestBooleanProperty { get; set; }
     }
 }
